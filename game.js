@@ -521,8 +521,9 @@
     livesDisplay.textContent = Array(lives).fill('❤️').join(' ');
   }
 
-  // ─── Face Tracking ─────────────────────────────────────────
-  let faceModel = null;
+  // ─── Face Tracking (MediaPipe Vision Tasks) ─────────────────
+  let faceDetector = null;
+  let lastDetectTime = 0;
 
   async function initFaceTracking() {
     try {
@@ -534,8 +535,23 @@
 
       webcamLabel.textContent = 'Loading model…';
 
-      // Load BlazeFace model
-      faceModel = await blazeface.load();
+      // Dynamically import MediaPipe Vision Tasks
+      const vision = await import(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs'
+      );
+
+      const filesetResolver = await vision.FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+      );
+
+      faceDetector = await vision.FaceDetector.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+          delegate: 'GPU',
+        },
+        runningMode: 'VIDEO',
+      });
 
       webcamLabel.textContent = 'Face tracking active';
       webcamLabel.classList.add('tracking');
@@ -552,21 +568,34 @@
     }
   }
 
-  async function detectFace() {
-    if (!faceModel) return;
+  function detectFace() {
+    if (!faceDetector) return;
+    requestAnimationFrame(detectFace);
+
+    // Throttle to ~30 fps for face detection
+    const now = performance.now();
+    if (now - lastDetectTime < 33) return;
+    lastDetectTime = now;
 
     try {
-      const predictions = await faceModel.estimateFaces(webcam, false);
+      const result = faceDetector.detectForVideo(webcam, now);
 
-      if (predictions.length > 0) {
-        const face = predictions[0];
+      if (result.detections && result.detections.length > 0) {
+        const detection = result.detections[0];
         faceDetected = true;
 
-        // Get nose position (landmark 2)
-        const nose = face.landmarks[2];
-        // Normalize to -1…1 (webcam is mirrored)
-        rawFaceX = -(nose[0] / webcam.videoWidth - 0.5) * 2;
-        rawFaceY = -(nose[1] / webcam.videoHeight - 0.5) * 2;
+        // Use keypoints for precise tracking (nose tip = index 2)
+        if (detection.keypoints && detection.keypoints.length > 2) {
+          const nose = detection.keypoints[2];
+          // nose.x and nose.y are normalized 0–1; mirror and center to -1…1
+          rawFaceX = -(nose.x - 0.5) * 2;
+          rawFaceY = -(nose.y - 0.5) * 2;
+        } else {
+          // Fallback to bounding box center
+          const bb = detection.boundingBox;
+          rawFaceX = -((bb.originX + bb.width / 2) / webcam.videoWidth - 0.5) * 2;
+          rawFaceY = -((bb.originY + bb.height / 2) / webcam.videoHeight - 0.5) * 2;
+        }
 
         if (!webcamContainer.classList.contains('tracking')) {
           webcamContainer.classList.add('tracking');
@@ -580,10 +609,8 @@
         webcamLabel.classList.remove('tracking');
       }
     } catch (e) {
-      // Silently continue
+      // Silently continue on detection errors
     }
-
-    requestAnimationFrame(detectFace);
   }
 
   // ─── Input ──────────────────────────────────────────────────
