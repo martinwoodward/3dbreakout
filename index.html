@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Breakout 3D</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      color: #e6edf3;
+      user-select: none;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* ---- Webcam feed ---- */
+    #webcamContainer {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 180px;
+      height: 135px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #30363d;
+      background: #161b22;
+      z-index: 10;
+      box-shadow: 0 4px 24px rgba(0,0,0,.5);
+    }
+    #webcamContainer.tracking {
+      border-color: #3fb950;
+      box-shadow: 0 0 12px rgba(63,185,80,.3);
+    }
+    #webcam {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    #webcamLabel {
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 10px;
+      color: #8b949e;
+    }
+    #webcamLabel.tracking { color: #3fb950; }
+
+    /* ---- HUD ---- */
+    #hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 20px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #scoreDisplay {
+      font-size: 22px;
+      font-weight: 600;
+      color: #e6edf3;
+      text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    }
+    #scoreDisplay span { color: #3fb950; }
+
+    #livesDisplay {
+      font-size: 22px;
+      font-weight: 600;
+      text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    }
+
+    /* ---- Start overlay ---- */
+    #overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      background: rgba(13,17,23,.75);
+      backdrop-filter: blur(6px);
+      transition: opacity .4s;
+    }
+    #overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #title {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #9be9a8, #216e39);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #subtitle {
+      font-size: 18px;
+      color: #8b949e;
+      margin-bottom: 32px;
+    }
+
+    .commit-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .commit-cell {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: #161b22;
+    }
+
+    #startHint {
+      margin-top: 32px;
+      font-size: 16px;
+      color: #8b949e;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    #startHint kbd {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #21262d;
+      font-family: inherit;
+      font-size: 14px;
+      color: #e6edf3;
+      box-shadow: inset 0 -1px 0 #30363d;
+    }
+
+    #cameraHint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #484f58;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: .6; }
+      50% { opacity: 1; }
+    }
+
+    /* ---- Game Over ---- */
+    #gameOver {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      background: rgba(13,17,23,.8);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .5s;
+    }
+    #gameOver.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #gameOverTitle {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    #gameOverTitle.win {
+      background: linear-gradient(135deg, #9be9a8, #216e39);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #finalScore {
+      font-size: 24px;
+      color: #8b949e;
+      margin-bottom: 24px;
+    }
+    #finalScore span { color: #3fb950; font-weight: 700; }
+    #restartHint {
+      font-size: 16px;
+      color: #8b949e;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ---- Loading ---- */
+    #loading {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      font-size: 13px;
+      color: #484f58;
+      z-index: 10;
+    }
+    #loading.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Webcam -->
+  <div id="webcamContainer">
+    <video id="webcam" autoplay playsinline muted></video>
+    <div id="webcamLabel">Initializing camera…</div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="scoreDisplay">Score: <span>0</span></div>
+    <div id="livesDisplay">❤️ ❤️ ❤️</div>
+  </div>
+
+  <!-- Start screen -->
+  <div id="overlay">
+    <div id="title">GitHub Breakout</div>
+    <div id="subtitle">3D · Face-Tracked · Commit-Graph Edition</div>
+    <div id="commitGraph"></div>
+    <div id="startHint">Press <kbd>SPACE</kbd> to start</div>
+    <div id="cameraHint">📷 Allow camera access for face-tracking controls</div>
+  </div>
+
+  <!-- Game over screen -->
+  <div id="gameOver">
+    <div id="gameOverTitle">Game Over</div>
+    <div id="finalScore">Final Score: <span>0</span></div>
+    <div id="restartHint">Press <kbd>SPACE</kbd> to play again</div>
+  </div>
+
+  <!-- Loading indicator -->
+  <div id="loading">Loading face-tracking model…</div>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0/dist/blazeface.js"></script>
+
+  <!-- Game -->
+  <script src="game.js"></script>
+
+</body>
+</html>
