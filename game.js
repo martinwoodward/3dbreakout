@@ -803,8 +803,10 @@
     smoothFaceY += (targetY - smoothFaceY) * FACE_SMOOTH;
 
     // Update paddle position
+    // Remap so the middle third of the webcam covers the full paddle range
     if (gameState === 'PLAYING' || gameState === 'WAITING') {
-      const paddleTarget = smoothFaceX * (FIELD_W / 2 - PADDLE_W / 2);
+      const amplified = Math.max(-1, Math.min(1, smoothFaceX * 3));
+      const paddleTarget = amplified * (FIELD_W / 2 - PADDLE_W / 2);
       paddle.position.x += (paddleTarget - paddle.position.x) * 0.15;
       paddle.position.x = Math.max(-FIELD_W / 2 + PADDLE_W / 2, Math.min(FIELD_W / 2 - PADDLE_W / 2, paddle.position.x));
 
