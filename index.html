@@ -55,6 +55,16 @@
       color: #8b949e;
     }
     #webcamLabel.tracking { color: #3fb950; }
+    .webcam-guide {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      border-left: 1px dashed rgba(63,185,80,.5);
+      pointer-events: none;
+    }
+    .webcam-guide.left  { left: 33.3%; }
+    .webcam-guide.right { left: 66.6%; }
 
     /* ---- HUD ---- */
     #hud {
@@ -221,6 +231,8 @@
   <!-- Webcam -->
   <div id="webcamContainer">
     <video id="webcam" autoplay playsinline muted></video>
+    <div class="webcam-guide left"></div>
+    <div class="webcam-guide right"></div>
     <div id="webcamLabel">Initializing camera…</div>
   </div>
 
