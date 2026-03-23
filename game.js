@@ -527,10 +527,13 @@
 
   async function initFaceTracking() {
     try {
+      // Use ideal constraints — Safari on iOS can reject exact width/height
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 320, height: 240, facingMode: 'user' },
+        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
       });
       webcam.srcObject = stream;
+      // Safari requires load() before play() for getUserMedia streams
+      webcam.load();
       await webcam.play();
 
       webcamLabel.textContent = 'Loading model…';
@@ -544,14 +547,28 @@
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
       );
 
-      faceDetector = await vision.FaceDetector.createFromOptions(filesetResolver, {
-        baseOptions: {
-          modelAssetPath:
-            'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-      });
+      // Try GPU delegate first, fall back to CPU (needed for iOS Safari)
+      let detector;
+      try {
+        detector = await vision.FaceDetector.createFromOptions(filesetResolver, {
+          baseOptions: {
+            modelAssetPath:
+              'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+            delegate: 'GPU',
+          },
+          runningMode: 'VIDEO',
+        });
+      } catch (gpuErr) {
+        console.warn('GPU delegate failed, falling back to CPU:', gpuErr);
+        detector = await vision.FaceDetector.createFromOptions(filesetResolver, {
+          baseOptions: {
+            modelAssetPath:
+              'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+          },
+          runningMode: 'VIDEO',
+        });
+      }
+      faceDetector = detector;
 
       webcamLabel.textContent = 'Face tracking active';
       webcamLabel.classList.add('tracking');
@@ -560,9 +577,9 @@
 
       detectFace();
     } catch (err) {
-      console.warn('Face tracking not available, falling back to mouse:', err);
-      webcamLabel.textContent = 'Camera unavailable — use mouse';
-      loadingEl.textContent = 'Using mouse/trackpad control';
+      console.warn('Face tracking not available, falling back to mouse/touch:', err);
+      webcamLabel.textContent = 'Camera unavailable — use touch';
+      loadingEl.textContent = 'Using touch/mouse control';
       useMouseFallback = true;
       setTimeout(() => loadingEl.classList.add('hidden'), 3000);
     }
@@ -624,6 +641,30 @@
       }
     }
   });
+
+  // Tap / click to start or restart (mobile-friendly)
+  function handleTapStart(e) {
+    if (gameState === 'WAITING') {
+      e.preventDefault();
+      startGame();
+    } else if (gameState === 'GAME_OVER' || gameState === 'WIN') {
+      e.preventDefault();
+      resetGame();
+    }
+  }
+  canvas.addEventListener('touchstart', handleTapStart, { passive: false });
+  overlay.addEventListener('touchstart', handleTapStart, { passive: false });
+  gameOverEl.addEventListener('touchstart', handleTapStart, { passive: false });
+  overlay.addEventListener('click', handleTapStart);
+  gameOverEl.addEventListener('click', handleTapStart);
+
+  // Track touch position for paddle control on mobile
+  document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) {
+      mouseX = (e.touches[0].clientX / window.innerWidth - 0.5) * 2;
+      useMouseFallback = true;
+    }
+  }, { passive: true });
 
   document.addEventListener('mousemove', (e) => {
     mouseX = (e.clientX / window.innerWidth - 0.5) * 2; // -1…1
