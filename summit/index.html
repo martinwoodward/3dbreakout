@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f4ef">
+  <meta name="description" content="A wee leap for the community. An original 3D Scottish Summit arcade game with thistles, tartan and bagpipe boosts.">
+  <title>Summit Hop · Scottish Summit</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme = param === "light" || param === "dark" ? param :
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./vendor/three.min.js"></script>
+  <script type="module" src="./game.mjs"></script>
+</head>
+<body>
+  <!-- THESIS: A playable Highland diorama, not a conference landing page.
+  OWN-WORLD: Clawpilot rose, chalk, charcoal and grassy game pieces; solid controls and bold compact type.
+  STORY: Meet a wee kilted climber, learn two controls, chase the Scottish Summit.
+  FIRST VIEWPORT: Intro at left, a generous 3D landscape at right, sound always within reach.
+  FORM: Brief-pinned 3D arcade cabinet; the landscape takes over when play begins. -->
+  <main id="app" data-state="ready">
+    <canvas id="world" tabindex="0" aria-label="Summit Hop 3D game. Move with left and right arrows or A and D. You jump automatically. Press P to pause."></canvas>
+    <header class="topbar">
+      <a class="brand" href="https://scottishsummit.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit Scottish Summit website">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M3 30 16 8l8 13 5-8 9 17H3Z" fill="none" stroke="currentColor" stroke-width="3"/><path d="m12 16 4 5 4-5M26 18l3 4 3-4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>SCOTTISH<strong>SUMMIT</strong></span>
+      </a>
+      <div class="toolbar">
+        <button id="pause" class="icon-button" aria-label="Pause game" hidden>Ⅱ</button>
+        <button id="sound" aria-pressed="false" title="Enable original music and sound effects"><span aria-hidden="true">♪</span> <span id="sound-label">Sound off</span></button>
+      </div>
+    </header>
+
+    <section id="hud" class="hud" aria-label="Current run" hidden>
+      <div><span class="stat-label">ALTITUDE</span><strong><span id="height">0</span><small> m</small></strong></div>
+      <div><span class="stat-label">SCORE</span><strong id="score">0</strong></div>
+      <div class="best-stat"><span class="stat-label">PERSONAL BEST</span><strong id="best">0</strong></div>
+    </section>
+    <div id="zone" class="zone" hidden>Murrayfield base camp</div>
+    <div id="toast" class="toast" role="status"></div>
+
+    <section id="intro" class="intro">
+      <h1>SUMMIT<br><span>HOP.</span></h1>
+      <p class="lead">A wee leap for<br>the community.</p>
+      <p class="description">Head for the Highlands. Chase the thistles.<br>Try not to fall on your bahookie.</p>
+      <button id="start" class="primary" disabled>Preparing the Highlands…</button>
+      <p class="keyboard-hint">or press <kbd>Space</kbd> to start</p>
+      <div class="instructions">
+        <div><span class="key-pair"><kbd>←</kbd><kbd>→</kbd></span><span>Move left &amp; right <small>A / D also work</small></span></div>
+        <div><span class="instruction-icon" aria-hidden="true">↟</span><span>We do the jumping <small>You stick the landing</small></span></div>
+        <div><span class="instruction-icon" aria-hidden="true">♧</span><span>Thistles score. Bagpipes soar. <small>Shortbread crumbles. Obviously.</small></span></div>
+      </div>
+      <p class="event-note">Inspired by Scottish Summit 2026<br>Murrayfield, Edinburgh · 2–3 October</p>
+    </section>
+
+    <div class="scene-caption" id="scene-caption"><span>THE ONLY WAY IS UP.</span><small>With a wee bit of sideways.</small></div>
+    <section id="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" hidden>
+      <div class="dialog-inner">
+        <h2 id="dialog-title">Taking a breather?</h2>
+        <p id="dialog-description"></p>
+        <div id="results" class="results" hidden><div><span>ALTITUDE</span><strong id="final-height"></strong></div><div><span>SCORE</span><strong id="final-score"></strong></div></div>
+        <button id="resume" class="primary">Back to the climb</button>
+        <button id="restart" class="secondary">Start a fresh climb</button>
+      </div>
+    </section>
+    <section id="error" class="error" role="alert" hidden><h2>The Highlands couldn't load.</h2><p id="error-detail">Please reload in a browser with WebGL enabled.</p><button onclick="location.reload()">Try again</button></section>
+    <nav id="touch-controls" class="touch-controls" aria-label="Touch game controls" hidden>
+      <button id="left" aria-label="Move left">←</button><span>HOLD TO STEER</span><button id="right" aria-label="Move right">→</button>
+    </nav>
+    <footer><span>Made for a bit of craic. Unofficial fan game.</span><a href="../">Play the original Breakout ↗</a></footer>
+  </main>
+  <noscript><p>This game needs JavaScript. Please enable it and reload.</p></noscript>
+</body>
+</html>

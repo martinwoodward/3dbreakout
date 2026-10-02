@@ -2,6 +2,38 @@
 
 A 3D breakout game themed after the GitHub contribution graph, with webcam face-tracking controls.
 
+## Scottish Summit: Summit Hop
+
+**[Play Summit Hop](https://www.woodwardweb.com/3dbreakout/summit/)** — a separate,
+static 3D Highland jumping game inspired by [Scottish Summit](https://scottishsummit.com/).
+The original Breakout game remains at the repository root.
+
+- Auto-jump between low-poly floating islands using **Left/Right** or **A/D**.
+  On touch screens, hold the arrow buttons or drag on the landscape.
+- Collect thistles (+25), catch bagpipe boosts, cross moving tartan platforms,
+  and avoid relying on crumbling shortbread twice.
+- Meet an original Wee Jimmy Krankie-inspired schoolboy cameo (+50 on landing).
+- **Sound is muted on every page load.** Use the persistent **Sound off / Sound on**
+  button to enable or mute the original synthesized bagpipe-inspired reel and effects.
+  Music plays only during a climb.
+- Press **P / Escape** or the pause button to pause. Leaving the tab pauses automatically.
+  Personal bests are saved locally when browser storage is available.
+
+All game artwork is original procedural 3D geometry, including the tartan texture,
+characters, thistles, bagpipes, Saltire, mountains and clouds. Music and effects are
+original Web Audio synthesis: no recorded music, samples, external art, analytics,
+camera access, or runtime CDN requests. The fan game is not affiliated with or
+endorsed by Scottish Summit or The Krankies.
+
+Serve this repository with `python -m http.server 8000`, then open
+`http://localhost:8000/summit/`. A WebGL-capable browser is required.
+There is no build step. Three.js r128 is vendored with its MIT license under
+`summit/vendor/`. The page respects reduced-motion preferences for decorative motion;
+the jumping gameplay still moves.
+
+Run the game-logic checks with `node --test summit/engine.test.mjs`.
+The existing GitHub Pages workflow publishes both games on pushes to `main`.
+
 ## Features
 
 - **GitHub Commit Graph Blocks** — Blocks are styled as the green contribution squares, with colors matching the real GitHub palette
